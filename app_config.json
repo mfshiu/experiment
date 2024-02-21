@@ -1,0 +1,11 @@
+{
+    "broker_type": "MQTT",
+    "host": "mqtt.gigoo.co",
+    "port": 1883,
+    "keepalive": 60,
+    "username": "eric",
+    "password": "eric123",
+
+    "log_level": "DEBUG",
+    "log_path": "_log/experiment.log"
+}
