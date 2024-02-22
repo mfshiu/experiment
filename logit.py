@@ -1,3 +1,4 @@
+from abdi_config import LOGGER_NAME
 from config import get_config
 import logging
 from logging.handlers import TimedRotatingFileHandler
@@ -5,7 +6,7 @@ import os
 from pathlib import Path
 
 
-__logger = logging.getLogger('experiment')
+__logger = logging.getLogger(LOGGER_NAME)
 __log_init = False
     
     

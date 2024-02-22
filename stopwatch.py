@@ -10,6 +10,7 @@ class Stopwatch:
     def start(self):
         if not self.running:
             self.start_time = time.time()
+            self.laps = []
             self.running = True
 
         return self.start_time
