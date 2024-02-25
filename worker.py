@@ -1,34 +1,29 @@
 import json
+import threading
 
 from holon.HolonicAgent import HolonicAgent
 from holon.logistics.loading_coordinator import LoadingCoordinator
 import logit
 
 
-_worker_count = 0
 logger = logit.get_logger()
-
+        
 
 class Worker(HolonicAgent):
-    def __init__(self, cfg):
+    def __init__(self, cfg, worker_id):
         super().__init__(cfg)
         
-        global _worker_count
-        _worker_count += 1
-        self.number = _worker_count
+        self.number = worker_id
         self.current_progress = 0
 
         logger.debug(f"Init Experiment done.")
 
 
     def on_connected(self):
-        # self.subscribe("job", topic_handler=self.do_job)
-        self.append_logistic(LoadingCoordinator(
-            self,
-            work_topic="job",
-            work_handler=self.do_job,
-            loading_evaluator=self.evaluate_loading))
-        
+        self.loading_coordinator = LoadingCoordinator(
+            agent=self,
+            loading_evaluator=self.evaluate_loading)
+        self.loading_coordinator.subscribe(topic="job", topic_handler=self.do_job)        
         self.subscribe("worker_termination", topic_handler=self.terminate_me)
         
         
@@ -53,7 +48,5 @@ class Worker(HolonicAgent):
 
 
     def terminate_me(self, topic:str, payload):
-        logger.info(f"terminate")
-        global _worker_count
-        _worker_count -= 1
+        logger.info(f"terminate: {self.number}")
         self.terminate()

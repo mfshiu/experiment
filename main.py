@@ -7,6 +7,7 @@ from typing import List
 
 from abdi_config import AbdiConfig
 from config import get_config
+from counter import ThreadSafeCounter
 from holon.HolonicAgent import HolonicAgent
 import logit
 from stopwatch import Stopwatch
@@ -24,7 +25,7 @@ class WorkingTest(HolonicAgent):
 
 
     def on_connected(self):
-        self.locker = Lock()
+        # self.locker = Lock()
         self.subscribe("work_start", topic_handler=self.start_working)
         self.subscribe("job_done", topic_handler=self.handle_job_done)
 
@@ -36,16 +37,17 @@ class WorkingTest(HolonicAgent):
         job_load = int(jobs['job_load'])
         logger.info(f"workers_count: {workers_count}, jobs_count: {jobs_count}, job_load: {job_load}")
         
+        self.worker_counter = ThreadSafeCounter()
         self.workers: List[Worker] = []
         for _ in range(workers_count):
-            a = Worker(self.config)
+            a = Worker(self.config, worker_id=self.worker_counter.increment())
             self.workers.append(a)
             a.start()
             
         time.sleep(2)   # Waiting for workers to complete connection.
 
-        with self.locker:
-            self.jobs_status = [0 for _ in range(jobs_count)]
+        # with self.locker:
+        self.jobs_status = [0 for _ in range(jobs_count)]
         for i in range(0, jobs_count):
             job = json.dumps({
                 "id": i,
@@ -60,8 +62,8 @@ class WorkingTest(HolonicAgent):
 
     def handle_job_done(self, topic:str, payload):
         job_id = int(payload.decode())
-        with self.locker:
-            self.jobs_status[job_id] = 1
+        # with self.locker:
+        self.jobs_status[job_id] = 1
         logger.debug(f"jobs_status: {self.jobs_status}")
         logger.info(f"Job {job_id} has been completed.")
         
