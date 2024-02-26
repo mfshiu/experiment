@@ -31,6 +31,8 @@ class WorkingTest(HolonicAgent):
 
 
     def start_working(self, topic:str, payload):
+        logger.info(f'\n----- Start Working -----')
+
         jobs = json.loads(payload.decode())
         workers_count = int(jobs['workers_count'])
         jobs_count = int(jobs['jobs_count'])
@@ -55,7 +57,7 @@ class WorkingTest(HolonicAgent):
             })
             logger.debug(f"publish job: {job}")
             self.publish(topic="job", payload=job)
-            # time.sleep(2)
+            time.sleep(1)
             
         logger.info(f"Start working at: {Stopwatch.format_time(self.sw.start())}")
 

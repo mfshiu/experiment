@@ -1,5 +1,5 @@
 import json
-import threading
+import time
 
 from holon.HolonicAgent import HolonicAgent
 from holon.logistics.loading_coordinator import LoadingCoordinator
@@ -15,8 +15,9 @@ class Worker(HolonicAgent):
         
         self.number = worker_id
         self.current_progress = 0
+        self.total_load = 0
 
-        logger.debug(f"Init Experiment done.")
+        logger.debug(f"{self.short_id}> Init Experiment done.")
 
 
     def on_connected(self):
@@ -28,25 +29,34 @@ class Worker(HolonicAgent):
         
         
     def evaluate_loading(self, topic, payload):
-        return min(100, self.current_progress)
+        if self.total_load:
+            return 100 - int(self.current_progress / self.total_load * 100)
+        else:
+            return 0
 
 
     def do_job(self, topic:str, payload):
         job = json.loads(payload.decode())
-        logger.info(f"job: {job}")
+        logger.debug(f"{self.short_id}> job: {job}")
 
-        echo_interval = 1000000
-        load = int(job['load'])
+        # echo_interval = 1000000
+        self.current_progress = 0
+        self.total_load = int(job['load'])
         job_id = job['id']
-        for i in range(1, load+1):
-            if not i % echo_interval:
-                self.current_progress = i//echo_interval
-                print(f"{self.number}-{job_id}.{self.current_progress}", end=" ")
-        print(f"\n{self.number}-{job_id}.***")
+        for i in range(0, self.total_load):
+            self.current_progress = i
+            # print(f"{i} ")
+            # time.sleep(0.01)
+            # if not i % echo_interval:
+                # print(f"{self.number}-{job_id}.{self.current_progress}", end=" ")
+                
+        self.current_progress = 0
+        self.total_load = 0
+        logger.warning(f"{self.short_id}> Completed job, Worker: {self.number}, Job: {job_id}")
 
         self.publish(topic="job_done", payload=job['id'])
 
 
     def terminate_me(self, topic:str, payload):
-        logger.info(f"terminate: {self.number}")
+        logger.info(f"{self.short_id}> terminate: {self.number}")
         self.terminate()
