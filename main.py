@@ -1,7 +1,8 @@
 import json
 import multiprocessing
+import random
 import signal
-from threading import Lock
+import threading 
 import time
 from typing import List
 
@@ -50,14 +51,18 @@ class WorkingTest(HolonicAgent):
 
         # with self.locker:
         self.jobs_status = [0 for _ in range(jobs_count)]
-        for i in range(0, jobs_count):
-            job = json.dumps({
-                "id": i,
-                "load": job_load
-            })
-            logger.debug(f"publish job: {job}")
-            self.publish(topic="job", payload=job)
-            time.sleep(1)
+        
+        def send_jobs():
+            for i in range(0, jobs_count):
+                job = json.dumps({
+                    "id": i,
+                    "load": job_load
+                })
+                logger.debug(f"publish job: {job}")
+                self.publish(topic="job", payload=job)
+                # time.sleep(random.randint(100, 3000)/1000)
+                time.sleep(.1)
+        threading.Thread(target=send_jobs).start()
             
         logger.info(f"Start working at: {Stopwatch.format_time(self.sw.start())}")
 
